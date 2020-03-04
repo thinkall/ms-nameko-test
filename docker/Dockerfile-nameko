@@ -1,0 +1,5 @@
+# docker build -t orangelabschina/oex-recsys:nameko -f Dockerfile-nameko .
+
+FROM orangelabschina/oex-recsys:base
+
+RUN pip install --no-cache-dir flask_nameko flasgger nameko

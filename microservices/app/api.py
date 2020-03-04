@@ -154,5 +154,50 @@ def register():
     return jsonify(response)
 
 
+@app.route('/api/v1/getpush', methods=['GET'])
+def getpush():
+    """
+        Register_get_instance API
+        parameters:
+        responses:
+        code:
+        description: 0 push running success.
+        message:
+        description: Push not running!
+        data:
+        description: return not_running
+        """
+
+    with ClusterRpcProxy(CONFIG) as rpc:
+        message = rpc.push.get_instance()
+    if message:
+        code = 200
+    response = dict(code=code, message=message)
+    return jsonify(response)
+
+
+@app.route('/api/v1/getregister', methods=['GET'])
+def getregister():
+    """
+        Register_get_instance API
+        parameters:
+        responses:
+        code:
+        description: 0 register running success.
+        message:
+        description: Register not running!
+        data:
+        description: return not_running
+        """
+    
+    with ClusterRpcProxy(CONFIG) as rpc:
+        message = rpc.register.get_instance()
+    if message:
+        code = 200
+    response = dict(code=code, message=message)
+    return jsonify(response)
+
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(parse_args.port), debug=True)

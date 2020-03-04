@@ -12,15 +12,20 @@ END
 import random
 from nameko.rpc import rpc
 import sys
-sys.path.append("..")
+#sys.path.append("..")
 from dependence.services import RedisService
 
 
 class RegisterService(object):
     name = "register"
-
+    id = random.randint(200,299)
+    
     def __init__(self):
         self.redis_handle = RedisService()
+    
+    @rpc
+    def get_instance(self):
+        return f"register instance {RegisterService.id}"
 
     @rpc
     def check_registered(self, u_id):

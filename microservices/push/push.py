@@ -17,10 +17,17 @@ from dependence.services import RedisService
 
 
 class PushService(object):
+    
     name = "push"
 
+    id = random.randint(100,199)
+    
     register_rpc = RpcProxy("register")
-
+    
+    @rpc
+    def get_instance(self):
+        return f"push instance {PushService.id}"
+    
     @rpc
     def push(self, u_id, content):
         user_data = self.register_rpc.check_registered(u_id)
