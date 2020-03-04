@@ -18,7 +18,7 @@ objects:
 # ++++++ LAYER 2 BUILDS +++++
 # +++++++++++++++++++++++++++
 - apiVersion: v1
-  kind: Build
+  kind: BuildConfig
   metadata:
       name: push
       labels:
@@ -35,14 +35,18 @@ objects:
       -
         type: GitHub
         github:
-          secret: "${WEBHOOK_SECRET}" 
+          secret: "${WEBHOOK_SECRET}"
+      -
+        type: Generic
+        generic:
+          secret: "${WEBHOOK_SECRET}"
     runPolicy: Serial
     source:
       type: Git
       git:
         uri: ${SOURCE_REPOSITORY_URL}
         ref: ${SOURCE_REPOSITORY_REF}
-      contextDir: microservices/app
+      contextDir: microservices/push
     strategy:
       type: Docker
       dockerStrategy:
@@ -53,14 +57,17 @@ objects:
     output:
       to:
         kind: ImageStreamTag
-        name: app:latest
+        name: "${APPLICATION_NAME}:latest"
 # +++++++++++++++++++++++++++
 # +++ LAYER 3 DEPLOYMENTS +++
-# +++++++++++++++++++++++++++ 
+# +++++++++++++++++++++++++++
+# ///////////////////////////
+# /// FRONTEND DEPLOYMENT ///
+# ///////////////////////////
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
-    name: app
+    name: ${APPLICATION_NAME}
     labels:
       app: ${APPLICATION_NAME}
     annotations:
@@ -80,13 +87,13 @@ objects:
         imageChangeParams:
           automatic: true
           containerNames:
-            - app
+            - ${APPLICATION_NAME}
           from:
             kind: ImageStreamTag
-            name: app:latest
+            name: ${APPLICATION_NAME}:latest
       -
         type: ConfigChange
-    replicas: 3
+    replicas: 1
     test: false
     selector:
       deploymentConfig: ${APPLICATION_NAME}
@@ -103,8 +110,12 @@ objects:
             ports:
               -
                 name: "http"
-                containerPort: 5000
-                protocol: TCP 
+                containerPort: 8080
+                protocol: TCP
+              -
+                name: "https"
+                containerPort: 8443
+                protocol: TCP
             env:
               -
                 name: "MYSQL_USER"
@@ -123,7 +134,104 @@ objects:
               privileged: false
         restartPolicy: "Always"
         terminationGracePeriodSeconds: 30
-        dnsPolicy: "ClusterFirst" 
+        dnsPolicy: "ClusterFirst"
+# ----------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
+# //////////////////////////
+# /// BACKEND DEPLOYMENT ///
+# //////////////////////////
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: "${DATABASE_SERVICE}"
+    labels:
+      app: ${APPLICATION_NAME}
+    annotations:
+      description: "Defines how to deploy the application database"
+  spec:
+    strategy:
+      type: Recreate
+      recreateParams:
+        timeoutSeconds: 600
+    triggers:
+      -
+        type: ImageChange
+        imageChangeParams:
+          automatic: true
+          containerNames:
+            - "${DATABASE_SERVICE}"
+          from:
+            kind: ImageStreamTag
+            namespace: openshift
+            name: mysql:latest
+      -
+        type: ConfigChange
+    replicas: 1
+    test: false
+    selector:
+      deploymentConfig: "${DATABASE_SERVICE}"
+    template:
+      metadata:
+        name: "${DATABASE_SERVICE}"
+        labels:
+          deploymentConfig: "${DATABASE_SERVICE}"
+      spec:
+        volumes:
+          -
+            name: "${DATABASE_SERVICE}-vol"
+            persistentVolumeClaim:
+              claimName: "${DATABASE_SERVICE}-pvc"
+        containers:
+          -
+            name: "${DATABASE_SERVICE}"
+            image: "${DATABASE_SERVICE}"
+            ports:
+              -
+                name: "db"
+                containerPort: 3306
+                protocol: TCP
+            env:
+              -
+                name: "MYSQL_USER"
+                value: "${DATABASE_USER}"
+              -
+                name: "MYSQL_PASSWORD"
+                value: "${DATABASE_PASSWORD}"
+              -
+                name: "MYSQL_DATABASE"
+                value: "${DATABASE_NAME}"
+            resources:
+              limits:
+                memory: 512Mi
+              requests: {}
+            volumeMounts:
+              -
+                name: "${DATABASE_SERVICE}-vol"
+                mountPath: /var/lib/mysql/data
+            livenessProbe:
+              tcpSocket:
+                port: 3306
+              initialDelaySeconds: 30
+              timeoutSeconds: 1
+              periodSeconds: 10
+              successThreshold: 1
+              failureThreshold: 3
+            readinessProbe:
+              exec:
+                command: [/bin/sh, '-i', '-c', 'MYSQL_PWD=''${DATABASE_PASSWORD}'' mysql -h 127.0.0.1 -u ${DATABASE_USER} -D ${DATABASE_NAME} -e ''SELECT 1''']
+              initialDelaySeconds: 5
+              timeoutSeconds: 1
+              periodSeconds: 10
+              successThreshold: 1
+              failureThreshold: 3
+            terminationMessagePath: "/dev/termination-log"
+            imagePullPolicy: IfNotPresent
+            securityContext:
+              capabilities: {}
+              privileged: false
+        restartPolicy: "Always"
+        terminationGracePeriodSeconds: 30
+        dnsPolicy: "ClusterFirst"
 # +++++++++++++++++++++++++++++++++
 # ++++++ LAYER 4 ABSTRACTIONS +++++
 # +++++++++++++++++++++++++++++++++
@@ -143,10 +251,36 @@ objects:
       -
         name: "http"
         protocol: TCP
-        port: 5000
-        targetPort: 5000 
+        port: 8080
+        targetPort: 8080
+      -
+        name: "https"
+        protocol: TCP
+        port: 8443
+        targetPort: 8443
     selector:
-      deploymentConfig: ${APPLICATION_NAME} 
+      deploymentConfig: ${APPLICATION_NAME}
+# ----------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
+# ///////////////////////
+# /// BACKEND SERVICE ///
+# ///////////////////////
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: "${DATABASE_SERVICE}"
+    labels:
+      app: "${APPLICATION_NAME}"
+    annotations:
+      description: "Exposes and load balances the application frontend pods."
+  spec:
+    ports:
+      - name: "db"
+        protocol: TCP
+        port: 3306
+        targetPort: 3306
+    selector:
+      deploymentConfig: ${DATABASE_SERVICE}
 # ----------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------
 # ////////////////////////
@@ -170,7 +304,27 @@ objects:
       targetPort: 8080
     tls:
       termination: edge
-      insecureEdgeTerminationPolicy: Allow 
+      insecureEdgeTerminationPolicy: Allow
+# ----------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
+# /////////////////////////////////////////
+# /// BACKEND PERSISTENT VOLUME CLAIM /////
+# /////////////////////////////////////////
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: "${DATABASE_SERVICE}-pvc"
+    labels:
+      app: "${APPLICATION_NAME}"
+    annotations:
+      description: "The pvc used for the application DB."
+  spec:
+    accessModes:
+      - "ReadWriteMany"
+    resources:
+      requests:
+        storage: "${DATABASE_VOLUME_CAPACITY}"
+# ----------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------
 # ////////////////////
 # /// PARAMETERS /////
@@ -180,7 +334,7 @@ parameters:
     displayName: "Application name"
     description: "The name assigned to all of the objects defined in this template."
     required: true
-    value: "app"
+    value: "ms-nameko"
   - name: "APPLICATION_HOSTNAME"
     displayName: "Application hostname"
     description: "The hostname for exposing your application on the Internal Network (*.kermit.itn.intraorange) or on the Internet (*.kmt.orange.com)."

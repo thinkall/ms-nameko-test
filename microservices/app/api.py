@@ -157,16 +157,18 @@ def register():
 @app.route('/api/v1/getpush', methods=['GET'])
 def getpush():
     """
-        Register_get_instance API
-        parameters:
-        responses:
-        code:
-        description: 0 push running success.
-        message:
-        description: Push not running!
-        data:
-        description: return not_running
-        """
+    getpush API 
+
+    Parameters Explain: 
+    parameters:  
+    responses:
+    code:
+    description: 0 push running success.
+    message:
+    description: Push not running!
+    data:
+    description: return not_running
+    """
 
     with ClusterRpcProxy(CONFIG) as rpc:
         message = rpc.push.get_instance()
@@ -179,16 +181,18 @@ def getpush():
 @app.route('/api/v1/getregister', methods=['GET'])
 def getregister():
     """
-        Register_get_instance API
-        parameters:
-        responses:
-        code:
-        description: 0 register running success.
-        message:
-        description: Register not running!
-        data:
-        description: return not_running
-        """
+    getregister API
+    
+    Parameters Explain: 
+    parameters:  
+    responses:
+    code:
+    description: 0 register running success.
+    message:
+    description: Register not running!
+    data:
+    description: return not_running
+    """
     
     with ClusterRpcProxy(CONFIG) as rpc:
         message = rpc.register.get_instance()
