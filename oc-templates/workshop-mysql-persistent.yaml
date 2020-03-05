@@ -2,25 +2,40 @@
 apiVersion: v1
 kind: Template
 metadata:
-  name: diod-nameko-test
+  name: workshop-mysql-persistent
   annotations:
-    openshift.io/display-name: "Microservices implemented with python+nameko+rabbitmq"
-    description: "An example of microservices atop nameko in minishift."
-    iconClass: "icon-python"
-    tags: "python,kermit,diod,microservices"
-    openshift.io/provider-display-name: "li.jiang@orange.com"
-  message: "Started! github-webhook=${WEBHOOK_SECRET}"
+    description: "An example of a ToDo List Application written in Java with a MySQL Database and persistent storage."
+    iconClass: "icon-jboss"
+    tags: "jboss,java,kermit-tutorial,kermit"
 labels:
-  template: diod-nameko
-  app: "${APPLICATION_NAME}"
-objects: 
+  template: workshop-mysql-persistent
+objects:
+# +++++++++++++++++++++++++++
+# +++ LAYER 0 BASE IMAGES +++
+# +++++++++++++++++++++++++++
+#
+# +++++++++++++++++++++++++++
+# ++++++ LAYER 1 IMAGES +++++
+# +++++++++++++++++++++++++++
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: "${APPLICATION_NAME}"
+    labels:
+      app: "${APPLICATION_NAME}"
+    annotations:
+      description: "Resulting Docker Image after the buit of my application frontend."
+  spec:
+    tags:
+      -
+        tag: latest
 # +++++++++++++++++++++++++++
 # ++++++ LAYER 2 BUILDS +++++
 # +++++++++++++++++++++++++++
 - apiVersion: v1
   kind: BuildConfig
   metadata:
-      name: push
+      name: ${APPLICATION_NAME}
       labels:
         app: ${APPLICATION_NAME}
         annotations:
@@ -46,13 +61,14 @@ objects:
       git:
         uri: ${SOURCE_REPOSITORY_URL}
         ref: ${SOURCE_REPOSITORY_REF}
-      contextDir: microservices/push
+      contextDir: ${SOURCE_REPOSITORY_CONTEXT}
     strategy:
-      type: Docker
-      dockerStrategy:
+      type: Source
+      sourceStrategy:
         from:
-          kind: DockerImage
-          name: orangelabschina/oex-recsys:nameko
+          kind: ImageStreamTag
+          namespace: openshift
+          name: "jboss-webserver30-tomcat7-openshift:latest"
         env: {}
     output:
       to:
@@ -334,7 +350,7 @@ parameters:
     displayName: "Application name"
     description: "The name assigned to all of the objects defined in this template."
     required: true
-    value: "ms-nameko"
+    value: "workshop"
   - name: "APPLICATION_HOSTNAME"
     displayName: "Application hostname"
     description: "The hostname for exposing your application on the Internal Network (*.kermit.itn.intraorange) or on the Internet (*.kmt.orange.com)."
@@ -345,7 +361,7 @@ parameters:
     displayName: "Git Repository URL"
     description: "The URL of the repository with your application source code."
     required: true
-    value: "https://github.com/thinkall/ms-nameko-test.git"
+    value: "https://gitlab.forge.orange-labs.fr/kermit/tutorials/workshop.git"
   - name: "SOURCE_REPOSITORY_REF"
     displayName: "Git Repository Reference"
     description: "The branch/tag/ref inside the repository where your application source code resides."

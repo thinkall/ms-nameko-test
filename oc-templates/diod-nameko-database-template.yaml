@@ -1,0 +1,210 @@
+# This OpenShift template will build a docker image using the Dockerfile found in the git repository
+# and then deploy it
+# To use it, you need to upload the template :
+# $ oc create -f diod-nameko-template.yaml
+# And create your application, either with the web console, or the cli :
+# $ oc new-app --template=diod-nameko -p APPLICATION_NAME=ms-register 
+# Tested with openshift-container-platform-3.9
+
+---
+apiVersion: v1
+kind: Template
+metadata:
+  name: diod-nameko
+  annotations:
+    openshift.io/display-name: "Microservices implemented with python+nameko+rabbitmq"
+    description: "An example of microservices atop nameko."
+    iconClass: "icon-python"
+    tags: "python,kermit,diod,microservices"
+    openshift.io/provider-display-name: "li.jiang@orange.com"
+  message: "Deployed Success!"
+labels:
+  template: diod-nameko
+  app: diod-nameko
+
+
+parameters:
+
+  - name: TOP_APPLICATION_NAME
+    description: The name of the group of the applications
+    value: diod-nameko
+  - name: APPLICATION_NAME
+    description: The name of the application
+    required: true
+    value: ms-dbs
+  - name: DASHBOARD_TITLE
+    description: The title of the dashboard
+    value: My Microservices Test Dashboard 
+  - name: "DOCKER_BASE_IMAGE"
+    displayName: "Docker image base"
+    description: "Docker image base for build application ImageStream."
+    value: "orangelabschina/oex-recsys:nameko" 
+
+
+objects:  
+
+
+# rabbitMQ
+
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: rabbitmq
+    labels:
+      app: rabbitmq
+    annotations: 
+      description: "Defines how to deploy the application rabbitmq"
+  spec:
+    strategy:
+      type: Recreate
+      recreateParams:
+        timeoutSeconds: 600
+    triggers:
+      -
+        type: ImageChange
+        imageChangeParams:
+          automatic: true
+          containerNames:
+            - rabbitmq
+          from:
+            kind: ImageStreamTag 
+            name: rabbitmq:3.8-rc 
+      -
+        type: ConfigChange
+    replicas: 1
+    test: false
+    selector:
+      deploymentConfig: rabbitmq
+    template:
+      metadata:
+        name: rabbitmq
+        labels:
+          deploymentConfig: rabbitmq
+      spec: 
+        containers:
+          - env: 
+            name: rabbitmq 
+            image: rabbitmq@sha256:2195a2ecefac2bf8aeac045fd7e0f0872cb146e77248493773020b2ae15fc131
+            ports:
+              -
+                name: rabbitmq
+                containerPort: 5672
+                protocol: TCP
+              -
+                name: rabbitmqadm
+                containerPort: 15672
+                protocol: TCP
+            env: 
+            resources:
+              limits:
+                memory: 512Mi
+              requests: {}
+            terminationMessagePath: "/dev/termination-log"
+            imagePullPolicy: IfNotPresent
+            securityContext:
+              capabilities: {}
+              privileged: false
+        restartPolicy: "Always"
+        terminationGracePeriodSeconds: 30
+        dnsPolicy: "ClusterFirst"
+
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: rabbitmq
+    labels:
+      app: rabbitmq
+    annotations:
+      description: "Exposes and load balances the application rabbitmq pods."
+  spec:
+    ports:
+      - name: rabbitmq
+        protocol: TCP
+        port: 5672
+        targetPort: 5672
+      - name: rabbitmqadm
+        protocol: TCP
+        port: 15672
+        targetPort: 15672
+    selector:
+      deploymentConfig: rabbitmq
+
+# redis
+
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: redis
+    labels:
+      app: redis
+    annotations: 
+      description: "Defines how to deploy the application redis"
+  spec:
+    strategy:
+      type: Recreate
+      recreateParams:
+        timeoutSeconds: 600
+    triggers:
+      -
+        type: ImageChange
+        imageChangeParams:
+          automatic: true
+          containerNames:
+            - redis
+          from:
+            kind: ImageStreamTag 
+            name: redis:6.0-rc
+      -
+        type: ConfigChange
+    replicas: 1
+    test: false
+    selector:
+      deploymentConfig: redis
+    template:
+      metadata:
+        name: redis
+        labels:
+          deploymentConfig: redis
+      spec: 
+        containers:
+          - env: 
+            name: redis 
+            image: redis@sha256:ee1d00c5250b5a886b09be2d5f9506add35dfb557f1ef37a7e4b8f0138f32956
+            ports:
+              -
+                name: "redis"
+                containerPort: 6379
+                protocol: TCP
+            env: 
+            resources:
+              limits:
+                memory: 512Mi
+              requests: {}
+            terminationMessagePath: "/dev/termination-log"
+            imagePullPolicy: IfNotPresent
+            securityContext:
+              capabilities: {}
+              privileged: false
+        restartPolicy: "Always"
+        terminationGracePeriodSeconds: 30
+        dnsPolicy: "ClusterFirst"
+
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: redis
+    labels:
+      app: redis
+    annotations:
+      description: "Exposes and load balances the application redis pods."
+  spec:
+    ports:
+      - name: redis
+        protocol: TCP
+        port: 6379
+        targetPort: 6379
+    selector:
+      deploymentConfig: redis
+ 

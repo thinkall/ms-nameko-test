@@ -11,6 +11,7 @@ return:
 END
 '''
 
+import os
 import time
 import random
 from flask import Flask, request, jsonify
@@ -25,7 +26,9 @@ parse_args = parser.parse_args()
 app = Flask(__name__)
 Swagger(app)
 
-CONFIG = {'AMQP_URI': "amqp://guest:guest@localhost"}
+RABBITMQ_HOSTNAME = os.environ.get("RABBITMQ_HOSTNAME", "localhost")
+
+CONFIG = {'AMQP_URI': "amqp://guest:guest@"+RABBITMQ_HOSTNAME}
 
 
 @app.route('/api/v1/comment', methods=['POST'])
@@ -199,6 +202,13 @@ def getregister():
     if message:
         code = 200
     response = dict(code=code, message=message)
+    return jsonify(response)
+
+
+@app.route('/api/v1/gettest', methods=['GET'])
+def gettest():
+    id = request.args.get('id', '') * 100000
+    response = dict(code=200, message=f"Your Id is {id}")
     return jsonify(response)
 
 

@@ -1,0 +1,211 @@
+# This OpenShift template will build a docker image using the Dockerfile found in the git repository
+# and then deploy it
+# To use it, you need to upload the template :
+# $ oc create -f diod-nameko-template.yaml
+# And create your application, either with the web console, or the cli :
+# $ oc new-app --template=diod-nameko -p APPLICATION_NAME=ms-register 
+# Tested with openshift-container-platform-3.9
+
+---
+apiVersion: v1
+kind: Template
+metadata:
+  name: diod-nameko
+  annotations:
+    openshift.io/display-name: "Microservices implemented with python+nameko+rabbitmq"
+    description: "An example of microservices atop nameko."
+    iconClass: "icon-python"
+    tags: "python,kermit,diod,microservices"
+    openshift.io/provider-display-name: "li.jiang@orange.com"
+  message: "Deployed Success!"
+labels:
+  template: diod-nameko
+  app: diod-nameko
+  
+
+parameters:
+
+  - name: TOP_APPLICATION_NAME
+    description: The name of the group of the applications
+    value: diod-nameko
+  - name: APPLICATION_NAME
+    description: The name of the application
+    required: true
+    # value: ms-app
+  - name: DASHBOARD_TITLE
+    description: The title of the dashboard
+    value: My Microservices Test Dashboard
+  - name: "SOURCE_REPOSITORY_URL"
+    displayName: "Git Repository URL"
+    description: "The URL of the repository with your application source code."
+    value: "https://github.com/thinkall/ms-nameko-test.git"
+  - name: "SOURCE_REPOSITORY_REF"
+    displayName: "Git Repository Reference"
+    description: "The branch/tag/ref inside the repository where your application source code resides."
+    value: "master"
+  - name: "SOURCE_REPOSITORY_CONTEXT"
+    displayName: "Git Repository contextDir"
+    description: "The directories inside the repository where your application source code resides."
+    # value: "microservices/register"
+    required: true
+  - name: "DOCKER_BASE_IMAGE"
+    displayName: "Docker image base"
+    description: "Docker image base for build application ImageStream."
+    value: "orangelabschina/oex-recsys:nameko"
+  - name: "RABBITMQ_HOSTNAME"
+    displayName: "rabbitmq hostname"
+    description: "RabbitMQ service hostname."
+    value: "rabbitmq.myproject.svc.cluster.local"
+  - name: "REDIS_HOST"
+    displayName: "redis hostname"
+    description: "Redis service hostname."
+    value: "redis.myproject.svc.cluster.local"
+  - name: "APPLICATION_HOSTNAME"
+    displayName: "application hostname"
+    description: "application hostname."
+    value: "nameko.test.cluster.local"
+
+
+
+
+objects:  
+
+# creates a specific service account for running the application
+# so that you can give it special rights to view other projects.
+- kind: ServiceAccount
+  apiVersion: v1
+  metadata:
+    name: dashboard
+
+# +++++++++++++++++++++++++++++++++ 
+#           ms 1 register 
+# +++++++++++++++++++++++++++++++++
+
+# defines a wrapper on top of our newly built image
+# (this is used to trigger a deployment if the image changes = has been rebuilt)
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    name: ${APPLICATION_NAME}
+    labels:
+      application: ${APPLICATION_NAME}
+
+# defines the build configuration (using the Docker strategy)
+- kind: BuildConfig
+  apiVersion: v1
+  metadata:
+    name: ${APPLICATION_NAME}
+    labels:
+      application: ${APPLICATION_NAME}
+  spec:
+    strategy:
+      type: Docker
+      dockerStrategy:
+        # the base image referenced by the Dockerfile
+        from:
+          kind: ImageStreamTag 
+          name: ${DOCKER_BASE_IMAGE}
+    source:
+      type: Git
+      git: 
+        uri: ${SOURCE_REPOSITORY_URL}
+        ref: ${SOURCE_REPOSITORY_REF}
+      contextDir: ${SOURCE_REPOSITORY_CONTEXT}
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ${APPLICATION_NAME}:latest
+    triggers:
+    - type: ImageChange
+
+# defines the deployment configuration
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    name: ${APPLICATION_NAME}
+    labels:
+      application: ${APPLICATION_NAME}
+  spec:
+    replicas: 1
+    selector:
+      deploymentconfig: ${APPLICATION_NAME}
+    strategy:
+      type: Rolling
+      rollingParams:
+        intervalSeconds: 1
+        timeoutSeconds: 60
+        updatePeriodSeconds: 1
+    template:
+      metadata:
+        name: ${APPLICATION_NAME}
+        labels:
+          deploymentconfig: ${APPLICATION_NAME}
+          application: ${APPLICATION_NAME}
+      spec:
+        # this is our custom service account, that might have more rights
+        serviceAccount: dashboard
+        containers:
+        - name: ${APPLICATION_NAME}
+          image: ${APPLICATION_NAME}:latest
+          # app config through env variables
+          env:
+          - name: DASHBOARD_TITLE
+            value: ${DASHBOARD_TITLE} 
+          - name: RABBITMQ_HOSTNAME
+            value: ${RABBITMQ_HOSTNAME}
+          - name: REDIS_HOST
+            value: ${REDIS_HOST}
+    triggers:
+    # causes a new deployment to be created any time the replication controller template changes
+    - type: ConfigChange
+    # causes a new deployment to be created each time a new version of the image is available
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        from:
+          kind: ImageStreamTag
+          name: ${APPLICATION_NAME}:latest
+        containerNames:
+        - ${APPLICATION_NAME}
+  status: {}
+
+
+# define service
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: "${APPLICATION_NAME}"
+    labels:
+      app: "${APPLICATION_NAME}"
+    annotations:
+      description: "Exposes and load balances the application frontend pods."
+  spec:
+    ports:
+      - name: app
+        protocol: TCP
+        port: 5000
+        targetPort: 5000
+    selector:
+      deploymentConfig: ${APPLICATION_NAME}
+
+
+# define route
+- apiVersion: v1
+  kind: Route
+  metadata:
+    name: "${APPLICATION_NAME}"
+    labels:
+      app: "${APPLICATION_NAME}" 
+    annotations:
+      description: "The route exposes the frontend service at a hostname."
+  spec:
+    host: "${APPLICATION_HOSTNAME}"
+    to:
+      kind: Service
+      name: ${APPLICATION_NAME}
+    port:
+      targetPort: 5000-tcp
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: Allow
+
