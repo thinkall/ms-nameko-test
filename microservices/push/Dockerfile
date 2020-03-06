@@ -5,8 +5,9 @@ WORKDIR /workplace
 
 COPY . .
 
-RUN chmod -R 777 /workplace
-RUN chown -R recsys:root /workplace
+
+RUN chgrp -R 0 /workplace
+RUN chmod -R g+rwX /workplace
 
 USER recsys
 

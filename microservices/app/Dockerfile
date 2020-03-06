@@ -5,10 +5,9 @@ WORKDIR /workplace
 
 COPY . .
 
-RUN chmod -R 777 /workplace
-RUN chown -R recsys:root /workplace
 
-USER recsys
+RUN chgrp -R 0 /workplace
+RUN chmod -R g+rwX /workplace
 
 EXPOSE 5000
 
