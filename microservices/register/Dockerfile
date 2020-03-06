@@ -7,10 +7,8 @@ COPY . .
 
 
 RUN chgrp -R 0 /workplace
-RUN chmod -R g+rwX /workplace
-
-USER recsys
+RUN chmod -R g+rwX /workplace 
 
 #EXPOSE 5000
 
-ENTRYPOINT nameko run register
+ENTRYPOINT RABBIT_HOSTNAME=$RABBITMQ_HOSTNAME nameko run register --config config.yml 

@@ -26,7 +26,7 @@ parse_args = parser.parse_args()
 app = Flask(__name__)
 Swagger(app)
 
-RABBITMQ_HOSTNAME = os.environ.get("RABBITMQ_HOSTNAME", "localhost")
+RABBITMQ_HOSTNAME = os.environ.get("RABBITMQ_HOSTNAME", "localhost") 
 
 CONFIG = {'AMQP_URI': "amqp://guest:guest@"+RABBITMQ_HOSTNAME}
 
@@ -160,17 +160,11 @@ def register():
 @app.route('/api/v1/getpush', methods=['GET'])
 def getpush():
     """
-    getpush API 
-
-    Parameters Explain: 
-    parameters:  
+    getpush API  
+    ---
     responses:
-    code:
-    description: 0 push running success.
-    message:
-    description: Push not running!
-    data:
-    description: return not_running
+      200: 
+        description: push is running.  
     """
 
     with ClusterRpcProxy(CONFIG) as rpc:
@@ -184,17 +178,11 @@ def getpush():
 @app.route('/api/v1/getregister', methods=['GET'])
 def getregister():
     """
-    getregister API
-    
-    Parameters Explain: 
-    parameters:  
+    getregister API 
+    --- 
     responses:
-    code:
-    description: 0 register running success.
-    message:
-    description: Register not running!
-    data:
-    description: return not_running
+      200: 
+        description: register is running.  
     """
     
     with ClusterRpcProxy(CONFIG) as rpc:
@@ -207,7 +195,20 @@ def getregister():
 
 @app.route('/api/v1/gettest', methods=['GET'])
 def gettest():
-    id = request.args.get('id', '') * 100000
+    """
+    getregister API 
+    --- 
+    parameters:
+      - in: query
+        name: id
+        type: string
+        required: false
+    responses:
+      200: 
+        description: api interface is running.   
+    """
+    # params in path/query/body
+    id = request.args.get('id', '') # * 100000
     response = dict(code=200, message=f"Your Id is {id}")
     return jsonify(response)
 
