@@ -51,7 +51,7 @@ parameters:
   - name: "DOCKER_BASE_IMAGE"
     displayName: "Docker image base"
     description: "Docker image base for build application ImageStream."
-    value: "orangelabschina/oex-recsys:nameko"
+    value: "oex-recsys:nameko"
   - name: "RABBITMQ_HOSTNAME"
     displayName: "rabbitmq hostname"
     description: "RabbitMQ service hostname."

@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: Template
+metadata:
+  creationTimestamp: null
+  name: modeltfidfenglish-dc-templates
+objects:
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    generation: 1
+    labels:
+      app: modeltfidfenglish
+    name: modeltfidfenglish
+  spec:
+    replicas: 1
+    revisionHistoryLimit: 3
+    selector:
+      app: modeltfidfenglish
+      deploymentconfig: modeltfidfenglish
+    strategy:
+      activeDeadlineSeconds: 21600
+      recreateParams:
+        timeoutSeconds: 600
+      resources: {}
+      type: Recreate
+    template:
+      metadata:
+        annotations:
+          openshift.io/generated-by: OpenShiftNewApp
+        creationTimestamp: null
+        labels:
+          app: modeltfidfenglish
+          deploymentconfig: modeltfidfenglish
+      spec:
+        containers:
+        - env:
+          - name: LANGUAGE
+            value: en
+          - name: LEVEL_LOG
+            value: DEBUG
+          - name: NAME_LOG
+            value: launch_model_english
+          - name: COUNT_LIMIT
+            value: "6000"
+          envFrom:
+          - secretRef:
+              name: secret-with-environment-variables
+          image: docker-registry.default.svc:5000/recsys/modeltfidfenglish@sha256:4434755c3203656761ef3793ef7370aa7bf9e552451315c29622a974e0d2e818
+          imagePullPolicy: Always
+          name: modeltfidfenglish
+          resources:
+            limits:
+              cpu: 500m
+              memory: 3000Mi
+            requests:
+              cpu: 10m
+              memory: 128Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /workplace/log
+            name: log4modeltfidfenglish
+            subPath: log4modeltfidfenglish
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - name: log4modeltfidfenglish
+          persistentVolumeClaim:
+            claimName: logs
+    test: false
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - modeltfidfenglish
+        from:
+          kind: ImageStreamTag
+          name: modeltfidfenglish:latest
+          namespace: recsys
+      type: ImageChange
+    - type: ConfigChange
+  status:
+    availableReplicas: 0
+    latestVersion: 0
+    observedGeneration: 0
+    replicas: 0
+    unavailableReplicas: 0
+    updatedReplicas: 0

@@ -1,0 +1,139 @@
+apiVersion: v1
+kind: Template
+metadata:
+  creationTimestamp: null
+  name: modeltfidffrench-dc-templates
+objects:
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    generation: 1
+    labels:
+      app: modeltfidffrench
+    name: modeltfidffrench
+  spec:
+    replicas: 1
+    revisionHistoryLimit: 3
+    selector:
+      app: modeltfidffrench
+      deploymentconfig: modeltfidffrench
+    strategy:
+      activeDeadlineSeconds: 21600
+      recreateParams:
+        timeoutSeconds: 600
+      resources: {}
+      type: Recreate
+    template:
+      metadata:
+        annotations:
+          openshift.io/generated-by: OpenShiftNewApp
+        creationTimestamp: null
+        labels:
+          app: modeltfidffrench
+          deploymentconfig: modeltfidffrench
+      spec:
+        containers:
+        - env:
+          - name: HOST_DB
+            value: mysql.recsys.svc
+          - name: PWD_DB
+            value: reco201911
+          - name: PORT_DB
+            value: "3306"
+          - name: NAME_DB
+            value: oex_recsys
+          - name: USER_DB
+            value: userOEX
+          - name: TABLE_DB
+            value: news
+          - name: NAME_LOG
+            value: launch_model_french
+          - name: SCORE_MIN
+            value: "0.001"
+          - name: SCORE_MAX
+            value: "0.999"
+          - name: LANGUAGE
+            value: fr
+          - name: PROVIDER
+            value: msn,jeuneafrique
+          - name: DATE_LIMIT
+            value: "7"
+          - name: COUNT_LIMIT
+            value: "6000"
+          - name: TOPN
+            value: "100"
+          - name: LEVEL_LOG
+            value: INFO
+          - name: MODEL_INTERVAL
+            value: "3600"
+          - name: MODEL_TEXT
+            value: t
+          - name: APP_PORT
+            value: "8080"
+          - name: THEME
+            value: all
+          - name: UI_NEWS_NUM
+            value: "10"
+          - name: NEWS_AGE_LIMIT
+            value: "1"
+          - name: MONGODB_HOST
+            value: mongodb.recsys.svc
+          - name: MONGODB_PORT
+            value: "27017"
+          - name: REDISDB_HOST
+            value: redis.recsys.svc
+          - name: REDISDB_PORT
+            value: "6379"
+          - name: REDISDB_PWD
+            value: X5F5GSTmPmuqTYU2
+          - name: MONGODB_USER
+            value: userB8O
+          - name: MONGODB_PWD
+            value: LR64aIxkoW7tgU3U
+          image: docker-registry.default.svc:5000/recsys/modeltfidffrench@sha256:61ec4fd38285e34cf1503fa85dc32747ccacbf26b0465ee7fab2e21a4948fbe1
+          imagePullPolicy: Always
+          name: modeltfidffrench
+          resources:
+            limits:
+              cpu: 500m
+              memory: 3000Mi
+            requests:
+              cpu: 10m
+              memory: 128Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /workplace/log
+            name: log4modeltfidffrench
+            subPath: log4modeltfidffrench
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - name: log4modeltfidffrench
+          persistentVolumeClaim:
+            claimName: logs
+    test: false
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - modeltfidffrench
+        from:
+          kind: ImageStreamTag
+          name: modeltfidffrench:latest
+          namespace: recsys
+      type: ImageChange
+    - type: ConfigChange
+  status:
+    availableReplicas: 0
+    latestVersion: 0
+    observedGeneration: 0
+    replicas: 0
+    unavailableReplicas: 0
+    updatedReplicas: 0

@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: Template
+metadata:
+  creationTimestamp: null
+  name: crawler-bc-templates
+objects:
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: crawler
+    name: crawler
+  spec:
+    failedBuildsHistoryLimit: 5
+    nodeSelector: null
+    output:
+      to:
+        kind: ImageStreamTag
+        name: crawler:latest
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      contextDir: Dockers/recsys_microservice/service_crawler/code
+      git:
+        uri: https://thinkall@gitlab.com/thinkall/recsys_diod.git
+      sourceSecret:
+        name: secret4diodprod
+      type: Git
+    strategy:
+      dockerStrategy:
+        from:
+          kind: ImageStreamTag
+          name: oex-recsys:base
+      type: Docker
+    successfulBuildsHistoryLimit: 5
+    triggers:
+    - github:
+        secret: AJKA22H5qiENLshg2EGJ
+      type: GitHub
+    - generic:
+        secret: YBoVi-XuqKVaHZ_48nT_
+      type: Generic
+    - type: ConfigChange
+    - imageChange: {}
+      type: ImageChange
+  status:
+    lastVersion: 0

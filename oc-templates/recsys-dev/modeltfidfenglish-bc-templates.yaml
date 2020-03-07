@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: Template
+metadata:
+  creationTimestamp: null
+  name: modeltfidfenglish-bc-templates
+objects:
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: modeltfidfenglish
+    name: modeltfidfenglish
+  spec:
+    failedBuildsHistoryLimit: 5
+    nodeSelector: null
+    output:
+      to:
+        kind: ImageStreamTag
+        name: modeltfidfenglish:latest
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      contextDir: Dockers/recsys_microservice/service_model/code
+      git:
+        uri: https://thinkall@gitlab.com/thinkall/recsys_diod.git
+      sourceSecret:
+        name: secret4diodprod
+      type: Git
+    strategy:
+      dockerStrategy:
+        from:
+          kind: ImageStreamTag
+          name: oex-recsys:base
+      type: Docker
+    successfulBuildsHistoryLimit: 5
+    triggers:
+    - github:
+        secret: I2uB4olEUCNFxrKfFgXf
+      type: GitHub
+    - generic:
+        secret: pWwiR0zeR3o6oYW1DcKu
+      type: Generic
+    - type: ConfigChange
+    - imageChange: {}
+      type: ImageChange
+  status:
+    lastVersion: 0

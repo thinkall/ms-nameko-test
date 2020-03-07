@@ -51,7 +51,7 @@ parameters:
   - name: "DOCKER_BASE_IMAGE"
     displayName: "Docker image base"
     description: "Docker image base for build application ImageStream."
-    value: "orangelabschina/oex-recsys:nameko" 
+    value: "oex-recsys:nameko" 
   - name: "RABBITMQ_HOSTNAME"
     displayName: "rabbitmq hostname"
     description: "RabbitMQ service hostname."
@@ -161,15 +161,15 @@ objects:
   status: {}
 
 
-# define service
-- apiVersion: v1
-  kind: Service
-  metadata:
-    name: ${APPLICATION_NAME}
-    labels:
-      app: ${APPLICATION_NAME}
-    annotations:
-      description: "Exposes and load balances the application backend pods."
-  spec: 
-    selector:
-      deploymentConfig: ${APPLICATION_NAME}
+# # define service
+# - apiVersion: v1
+#   kind: Service
+#   metadata:
+#     name: ${APPLICATION_NAME}
+#     labels:
+#       app: ${APPLICATION_NAME}
+#     annotations:
+#       description: "Exposes and load balances the application backend pods."
+#   spec: 
+#     selector:
+#       deploymentConfig: ${APPLICATION_NAME}

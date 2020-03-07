@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: Template
+metadata:
+  creationTimestamp: null
+  name: haproxy-bc-templates
+objects:
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: haproxy
+    name: haproxy
+  spec:
+    failedBuildsHistoryLimit: 5
+    nodeSelector: null
+    output:
+      to:
+        kind: ImageStreamTag
+        name: haproxy:latest
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      contextDir: Dockers/recsys_microservice/service_haproxy
+      git:
+        uri: https://thinkall@gitlab.com/thinkall/recsys_diod.git
+      sourceSecret:
+        name: secret4diodprod
+      type: Git
+    strategy:
+      dockerStrategy:
+        from:
+          kind: ImageStreamTag
+          name: haproxy:2.1.2
+      type: Docker
+    successfulBuildsHistoryLimit: 5
+    triggers:
+    - github:
+        secret: 33VfVxuth4NS4EbaJobA
+      type: GitHub
+    - generic:
+        secret: OHSA-uhxfX3R6a8p8KoV
+      type: Generic
+    - type: ConfigChange
+    - imageChange: {}
+      type: ImageChange
+  status:
+    lastVersion: 0

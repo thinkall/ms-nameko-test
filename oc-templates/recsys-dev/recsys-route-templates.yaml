@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Template
+metadata:
+  creationTimestamp: null
+  name: recsys-route-templates
+objects:
+- apiVersion: v1
+  kind: Route
+  metadata:
+    creationTimestamp: null
+    labels:
+      app: haproxy
+      network: public
+    name: recsys
+  spec:
+    host: recsys.noprod-b.kmt.orange.com
+    port:
+      targetPort: 8880-tcp
+    tls:
+      insecureEdgeTerminationPolicy: Allow
+      termination: edge
+    to:
+      kind: Service
+      name: haproxy
+      weight: 100
+    wildcardPolicy: None
+  status:
+    ingress:
+    - conditions:
+      - lastTransitionTime: 2020-01-21T08:59:17Z
+        status: "True"
+        type: Admitted
+      host: recsys.noprod-b.kmt.orange.com
+      routerName: router-public
+      wildcardPolicy: None
+    - conditions:
+      - lastTransitionTime: 2020-01-21T08:59:17Z
+        status: "True"
+        type: Admitted
+      host: recsys.noprod-b.kmt.orange.com
+      routerName: router-gin
+      wildcardPolicy: None

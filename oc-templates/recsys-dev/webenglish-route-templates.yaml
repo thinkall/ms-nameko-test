@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Template
+metadata:
+  creationTimestamp: null
+  name: webenglish-route-templates
+objects:
+- apiVersion: v1
+  kind: Route
+  metadata:
+    creationTimestamp: null
+    labels:
+      app: webenglish
+      network: public
+    name: webenglish
+  spec:
+    host: webenglish.noprod-b.kmt.orange.com
+    port:
+      targetPort: 8080-tcp
+    to:
+      kind: Service
+      name: webenglish
+      weight: 100
+    wildcardPolicy: None
+  status:
+    ingress:
+    - conditions:
+      - lastTransitionTime: 2020-01-21T08:39:23Z
+        status: "True"
+        type: Admitted
+      host: webenglish.noprod-b.kmt.orange.com
+      routerName: router-public
+      wildcardPolicy: None
+    - conditions:
+      - lastTransitionTime: 2020-01-21T08:39:23Z
+        status: "True"
+        type: Admitted
+      host: webenglish.noprod-b.kmt.orange.com
+      routerName: router-gin
+      wildcardPolicy: None

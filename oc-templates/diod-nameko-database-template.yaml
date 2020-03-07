@@ -38,13 +38,42 @@ parameters:
   - name: "DOCKER_BASE_IMAGE"
     displayName: "Docker image base"
     description: "Docker image base for build application ImageStream."
-    value: "orangelabschina/oex-recsys:nameko" 
+    value: "oex-recsys:nameko" 
 
 
 objects:  
 
 
 # rabbitMQ
+
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      openshift.io/image.dockerRepositoryCheck: 2020-03-05T12:47:35Z
+    creationTimestamp: null
+    generation: 2
+    labels:
+      app: rabbitmq
+    name: rabbitmq
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - annotations:
+        openshift.io/generated-by: OpenShiftWebConsole
+        openshift.io/imported-from: rabbitmq:3.8-rc
+      from:
+        kind: DockerImage
+        name: rabbitmq:3.8-rc
+      generation: 2
+      importPolicy: {}
+      name: 3.8-rc
+      referencePolicy:
+        type: Source
+  status:
+    dockerImageRepository: ""
+
 
 - apiVersion: v1
   kind: DeploymentConfig
@@ -84,7 +113,7 @@ objects:
         containers:
           - env: 
             name: rabbitmq 
-            image: rabbitmq@sha256:2195a2ecefac2bf8aeac045fd7e0f0872cb146e77248493773020b2ae15fc131
+            image: docker.io/library/rabbitmq@sha256:2195a2ecefac2bf8aeac045fd7e0f0872cb146e77248493773020b2ae15fc131
             ports:
               -
                 name: rabbitmq
@@ -133,6 +162,35 @@ objects:
 # redis
 
 - apiVersion: v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      openshift.io/image.dockerRepositoryCheck: 2020-03-05T12:47:35Z
+    creationTimestamp: null
+    generation: 2
+    labels:
+      app: redis
+    name: redis
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - annotations:
+        openshift.io/generated-by: OpenShiftWebConsole
+        openshift.io/imported-from: redis:6.0-rc
+      from:
+        kind: DockerImage
+        name: redis:6.0-rc
+      generation: 2
+      importPolicy: {}
+      name: 6.0-rc
+      referencePolicy:
+        type: Source
+  status:
+    dockerImageRepository: ""
+    
+
+- apiVersion: v1
   kind: DeploymentConfig
   metadata:
     name: redis
@@ -170,7 +228,7 @@ objects:
         containers:
           - env: 
             name: redis 
-            image: redis@sha256:ee1d00c5250b5a886b09be2d5f9506add35dfb557f1ef37a7e4b8f0138f32956
+            image: docker.io/library/redis@sha256:ee1d00c5250b5a886b09be2d5f9506add35dfb557f1ef37a7e4b8f0138f32956
             ports:
               -
                 name: "redis"

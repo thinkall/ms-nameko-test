@@ -27,3 +27,8 @@ docker run -d --rm --name some-app --network my-net  --network-alias app -p 5000
 docker run -d --rm --name some-push --network my-net  --network-alias push --env RABBITMQ_HOSTNAME=rabbitmq --env REDIS_HOST=redis nameko-test-push:latest
 
 docker run -d --rm --name some-register --network my-net  --network-alias register --env RABBITMQ_HOSTNAME=rabbitmq --env REDIS_HOST=redis nameko-test-register:latest
+
+
+
+
+

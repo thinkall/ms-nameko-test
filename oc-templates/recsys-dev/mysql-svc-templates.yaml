@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Template
+metadata:
+  creationTimestamp: null
+  name: mysql-svc-templates
+objects:
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      template.openshift.io/expose-uri: mysql://{.spec.clusterIP}:{.spec.ports[?(.name=="mysql")].port}
+    creationTimestamp: null
+    labels:
+      template: mysql-persistent-template
+    name: mysql
+    ownerReferences:
+    - apiVersion: template.openshift.io/v1
+      blockOwnerDeletion: true
+      kind: TemplateInstance
+      name: a51c51a6-1eaf-405d-a5ec-885d0339ed89
+      uid: aeb393d5-35e0-11ea-b99a-fa163eb6547a
+  spec:
+    ports:
+    - name: mysql
+      port: 3306
+      protocol: TCP
+      targetPort: 3306
+    selector:
+      name: mysql
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}

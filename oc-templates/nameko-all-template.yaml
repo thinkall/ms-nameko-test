@@ -1,0 +1,826 @@
+# This template is tested working well in minishift @2020.03.07
+
+apiVersion: v1
+kind: Template
+metadata:
+  name: diod-nameko
+  annotations:
+    openshift.io/display-name: "Microservices implemented with python+nameko+rabbitmq"
+    description: "An example of microservices atop nameko."
+    iconClass: "icon-python"
+    tags: "python,kermit,diod,microservices"
+    openshift.io/provider-display-name: "li.jiang@orange.com"
+  message: "Deployed Success!"
+labels:
+  template: diod-nameko
+  app: diod-nameko
+
+
+objects:
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    generation: 1
+    labels:
+      app: app
+    name: app
+  spec:
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      app: app
+      deploymentconfig: app
+    strategy:
+      activeDeadlineSeconds: 21600
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        annotations:
+          openshift.io/generated-by: OpenShiftNewApp
+        creationTimestamp: null
+        labels:
+          app: app
+          deploymentconfig: app
+      spec:
+        containers:
+        - env:
+          - name: RABBITMQ_HOSTNAME
+            value: rabbitmq.develop.svc.cluster.local
+          - name: REDIS_HOST
+            value: redis.develop.svc.cluster.local
+          image: app 
+          imagePullPolicy: Always
+          name: app
+          ports:
+          - containerPort: 5000
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - app
+        from:
+          kind: ImageStreamTag
+          name: app:latest
+          namespace: develop
+      type: ImageChange
+  status:
+    availableReplicas: 0
+    latestVersion: 0
+    observedGeneration: 0
+    replicas: 0
+    unavailableReplicas: 0
+    updatedReplicas: 0
+
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    generation: 1
+    labels:
+      app: push
+    name: push
+  spec:
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      app: push
+      deploymentconfig: push
+    strategy:
+      activeDeadlineSeconds: 21600
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        annotations:
+          openshift.io/generated-by: OpenShiftNewApp
+        creationTimestamp: null
+        labels:
+          app: push
+          deploymentconfig: push
+      spec:
+        containers:
+        - env:
+          - name: RABBITMQ_HOSTNAME
+            value: rabbitmq.develop.svc.cluster.local
+          - name: REDIS_HOST
+            value: redis.develop.svc.cluster.local
+          image: push 
+          imagePullPolicy: Always
+          name: push
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - push
+        from:
+          kind: ImageStreamTag
+          name: push:latest
+          namespace: develop
+      type: ImageChange
+  status:
+    availableReplicas: 0
+    latestVersion: 0
+    observedGeneration: 0
+    replicas: 0
+    unavailableReplicas: 0
+    updatedReplicas: 0
+
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    generation: 1
+    labels:
+      app: rabbitmq
+    name: rabbitmq
+  spec:
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      app: rabbitmq
+      deploymentconfig: rabbitmq
+    strategy:
+      activeDeadlineSeconds: 21600
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        annotations:
+          openshift.io/generated-by: OpenShiftNewApp
+        creationTimestamp: null
+        labels:
+          app: rabbitmq
+          deploymentconfig: rabbitmq
+      spec:
+        containers:
+        - image: rabbitmq 
+          imagePullPolicy: IfNotPresent
+          name: rabbitmq
+          ports:
+          - containerPort: 5671
+            protocol: TCP
+          - containerPort: 5672
+            protocol: TCP
+          - containerPort: 15671
+            protocol: TCP
+          - containerPort: 15672
+            protocol: TCP
+          - containerPort: 25672
+            protocol: TCP
+          - containerPort: 4369
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /var/lib/rabbitmq
+            name: rabbitmq-volume-1
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: rabbitmq-volume-1
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - rabbitmq
+        from:
+          kind: ImageStreamTag
+          name: rabbitmq:3.8-management
+          namespace: develop
+      type: ImageChange
+  status:
+    availableReplicas: 0
+    latestVersion: 0
+    observedGeneration: 0
+    replicas: 0
+    unavailableReplicas: 0
+    updatedReplicas: 0
+
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    generation: 1
+    labels:
+      app: redis
+    name: redis
+  spec:
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      app: redis
+      deploymentconfig: redis
+    strategy:
+      activeDeadlineSeconds: 21600
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        annotations:
+          openshift.io/generated-by: OpenShiftNewApp
+        creationTimestamp: null
+        labels:
+          app: redis
+          deploymentconfig: redis
+      spec:
+        containers:
+        - image: redis 
+          imagePullPolicy: IfNotPresent
+          name: redis
+          ports:
+          - containerPort: 6379
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /data
+            name: redis-volume-1
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: redis-volume-1
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - redis
+        from:
+          kind: ImageStreamTag
+          name: redis:6.0-rc
+          namespace: develop
+      type: ImageChange
+  status:
+    availableReplicas: 0
+    latestVersion: 0
+    observedGeneration: 0
+    replicas: 0
+    unavailableReplicas: 0
+    updatedReplicas: 0
+
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    generation: 1
+    labels:
+      app: register
+    name: register
+  spec:
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      app: register
+      deploymentconfig: register
+    strategy:
+      activeDeadlineSeconds: 21600
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        annotations:
+          openshift.io/generated-by: OpenShiftNewApp
+        creationTimestamp: null
+        labels:
+          app: register
+          deploymentconfig: register
+      spec:
+        containers:
+        - env:
+          - name: RABBITMQ_HOSTNAME
+            value: rabbitmq.develop.svc.cluster.local
+          - name: REDIS_HOST
+            value: redis.develop.svc.cluster.local
+          image: register
+          imagePullPolicy: Always
+          name: register
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - register
+        from:
+          kind: ImageStreamTag
+          name: register:latest
+          namespace: develop
+      type: ImageChange
+  status:
+    availableReplicas: 0
+    latestVersion: 0
+    observedGeneration: 0
+    replicas: 0
+    unavailableReplicas: 0
+    updatedReplicas: 0
+
+
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: app
+    name: app
+  spec:
+    failedBuildsHistoryLimit: 5
+    nodeSelector: null
+    output:
+      to:
+        kind: ImageStreamTag
+        name: app:latest
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      contextDir: microservices/app
+      git:
+        uri: https://github.com/thinkall/ms-nameko-test.git
+      type: Git
+    strategy:
+      dockerStrategy:
+        from:
+          kind: DockerImage
+          name: orangelabschina/oex-recsys:nameko
+      type: Docker
+    successfulBuildsHistoryLimit: 5
+    triggers:
+    - github:
+        secret: IbXi8kK5epZcCyDxZPtZ
+      type: GitHub
+    - generic:
+        secret: EpPIJDZ1oaFtlE4GMaCP
+      type: Generic
+    - type: ConfigChange
+    - imageChange: {}
+      type: ImageChange
+  status:
+    lastVersion: 0
+
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: push
+    name: push
+  spec:
+    failedBuildsHistoryLimit: 5
+    nodeSelector: null
+    output:
+      to:
+        kind: ImageStreamTag
+        name: push:latest
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      contextDir: microservices/push
+      git:
+        uri: https://github.com/thinkall/ms-nameko-test.git
+      type: Git
+    strategy:
+      dockerStrategy:
+        from:
+          kind: DockerImage
+          name: orangelabschina/oex-recsys:nameko
+      type: Docker
+    successfulBuildsHistoryLimit: 5
+    triggers:
+    - github:
+        secret: MA2WYGKjTEhbx0vc4Y0m
+      type: GitHub
+    - generic:
+        secret: aIfw84ILdmY3sRlaLedW
+      type: Generic
+    - type: ConfigChange
+    - imageChange: {}
+      type: ImageChange
+  status:
+    lastVersion: 0
+
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: register
+    name: register
+  spec:
+    failedBuildsHistoryLimit: 5
+    nodeSelector: null
+    output:
+      to:
+        kind: ImageStreamTag
+        name: register:latest
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      contextDir: microservices/register
+      git:
+        uri: https://github.com/thinkall/ms-nameko-test.git
+      type: Git
+    strategy:
+      dockerStrategy:
+        from:
+          kind: DockerImage
+          name: orangelabschina/oex-recsys:nameko
+      type: Docker
+    successfulBuildsHistoryLimit: 5
+    triggers:
+    - github:
+        secret: qa0lDoZtVU3Ekg5WwENe
+      type: GitHub
+    - generic:
+        secret: WwSy7P-qhK62-lvnjLCo
+      type: Generic
+    - type: ConfigChange
+    - imageChange: {}
+      type: ImageChange
+  status:
+    lastVersion: 0
+
+
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    generation: 1
+    labels:
+      app: app
+    name: app
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - annotations: null
+      from:
+        kind: DockerImage
+        name: app:latest
+      generation: null
+      importPolicy: {}
+      name: latest
+      referencePolicy:
+        type: ""
+  status:
+    dockerImageRepository: ""
+
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+      openshift.io/image.dockerRepositoryCheck: 2020-03-07T04:29:46Z
+    creationTimestamp: null
+    generation: 2
+    labels:
+      app: register
+    name: oex-recsys
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - annotations:
+        openshift.io/imported-from: orangelabschina/oex-recsys:nameko
+      from:
+        kind: DockerImage
+        name: oex-recsys:nameko
+      generation: 2
+      importPolicy: {}
+      name: nameko
+      referencePolicy:
+        type: Source
+  status:
+    dockerImageRepository: ""
+
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    generation: 1
+    labels:
+      app: push
+    name: push
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - annotations: null
+      from:
+        kind: DockerImage
+        name: push:latest
+      generation: null
+      importPolicy: {}
+      name: latest
+      referencePolicy:
+        type: ""
+  status:
+    dockerImageRepository: ""
+
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+      openshift.io/image.dockerRepositoryCheck: 2020-03-07T04:29:34Z
+    creationTimestamp: null
+    generation: 2
+    labels:
+      app: rabbitmq
+    name: rabbitmq
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - annotations:
+        openshift.io/imported-from: rabbitmq:3.8-management
+      from:
+        kind: DockerImage
+        name: rabbitmq:3.8-management
+      generation: 2
+      importPolicy: {}
+      name: 3.8-management
+      referencePolicy:
+        type: Source
+  status:
+    dockerImageRepository: ""
+
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+      openshift.io/image.dockerRepositoryCheck: 2020-03-07T04:29:37Z
+    creationTimestamp: null
+    generation: 2
+    labels:
+      app: redis
+    name: redis
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - annotations:
+        openshift.io/imported-from: redis:6.0-rc
+      from:
+        kind: DockerImage
+        name: redis:6.0-rc
+      generation: 2
+      importPolicy: {}
+      name: 6.0-rc
+      referencePolicy:
+        type: Source
+  status:
+    dockerImageRepository: ""
+
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    generation: 1
+    labels:
+      app: register
+    name: register
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - annotations: null
+      from:
+        kind: DockerImage
+        name: register:latest
+      generation: null
+      importPolicy: {}
+      name: latest
+      referencePolicy:
+        type: ""
+  status:
+    dockerImageRepository: ""
+
+
+- apiVersion: v1
+  kind: Route
+  metadata:
+    annotations:
+      openshift.io/host.generated: "true"
+    creationTimestamp: null
+    labels:
+      app: app
+    name: app
+  spec:
+    host: app-develop.192.168.99.106.nip.io
+    port:
+      targetPort: 5000-tcp
+    to:
+      kind: Service
+      name: app
+      weight: 100
+    wildcardPolicy: None
+  status:
+    ingress:
+    - conditions:
+      - lastTransitionTime: 2020-03-07T05:18:46Z
+        status: "True"
+        type: Admitted
+      host: app-develop.192.168.99.106.nip.io
+      routerName: router
+      wildcardPolicy: None
+
+- apiVersion: v1 
+  kind: Route
+  metadata:
+    annotations:
+      openshift.io/host.generated: "true"
+    creationTimestamp: null
+    labels:
+      app: rabbitmq
+    name: rabbitmq-management
+  spec:
+    host: rabbitmq-management-develop.192.168.99.106.nip.io
+    port:
+      targetPort: 15672-tcp
+    to:
+      kind: Service
+      name: rabbitmq
+      weight: 100
+    wildcardPolicy: None
+  status:
+    ingress:
+    - conditions:
+      - lastTransitionTime: 2020-03-07T04:31:08Z
+        status: "True"
+        type: Admitted
+      host: rabbitmq-management-develop.192.168.99.106.nip.io
+      routerName: router
+      wildcardPolicy: None
+
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: app
+    name: app
+  spec:
+    ports:
+    - name: 5000-tcp
+      port: 5000
+      protocol: TCP
+      targetPort: 5000
+    selector:
+      app: app
+      deploymentconfig: app
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: rabbitmq
+    name: rabbitmq
+  spec:
+    ports: 
+    - name: 5672-tcp
+      port: 5672
+      protocol: TCP
+      targetPort: 5672 
+    - name: 15672-tcp
+      port: 15672
+      protocol: TCP
+      targetPort: 15672 
+    selector:
+      app: rabbitmq
+      deploymentconfig: rabbitmq
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: redis
+    name: redis
+  spec:
+    ports:
+    - name: 6379-tcp
+      port: 6379
+      protocol: TCP
+      targetPort: 6379
+    selector:
+      app: redis
+      deploymentconfig: redis
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
