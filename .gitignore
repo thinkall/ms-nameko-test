@@ -3,13 +3,4 @@
 .idea*
 .ipynb*
 *__pycache__*
-*.ibd
 *local_test*
-*old*
-*.csv*
-!msn_feeds.csv
-*nltk_data*
-*pid_*
-*log*
-*build*
-*data_backup*
